@@ -53,6 +53,13 @@ a img {
     border: none 0 #fff;
 }
 
+.fade-in {
+    animation-name: fadeIn;
+    animation-duration: 1.3s;
+    animation-timing-function: cubic-bezier(0, 0, 0.4, 1);
+    animation-fill-mode: forwards;
+}
+
 h1,
 h2,
 h3,

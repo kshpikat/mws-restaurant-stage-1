@@ -1,7 +1,72 @@
+// const lazyLoadConfig = {
+//   rootMargin: '50px 0px',
+//   threshold: 0.01
+// };
+
+// const getLazyImages = () => document.querySelectorAll('.lazy-load');
+
+// const fetchImage = (imgSrc) => {
+//   new Promise((b, c) => {
+//       var img = new Image;
+//       img.src = imgSrc;
+//       img.onload = b;
+//       img.onerror = c;
+//   });
+// };
+
+// const applyImage = (img, imgSrc) => {
+//   img.classList.add('lazy-load-complete');
+//   img.classList.
+//   img.src = imgSrc;
+//   img.classList.add('fade-in');
+// };
+
+// const preloadImage = (a) => {
+//   a.dataset.src?fetchImage(a.dataset.src).then(() => applyImage(a, a.dataset.src)):void 0;
+// };
+
+// const onIntersection = (entries) => {
+//   entries.forEach(entry => {
+//     if (entry.intersectionRatio > 0) {
+//       intersectionObserver.unobserve(entry.target);
+//       preloadImage(entry.target);
+//     }
+//   });
+// };
+
+// const intersectionObserver = new IntersectionObserver(onIntersection, lazyLoadConfig);
+// const setLazyImageLoadObserver = () => {
+//   getLazyImages().forEach(image => {
+//     intersectionObserver.observe(image);
+//   });
+// };
+
+
+
+
+
+
+
+export const titleGoogleMap = (map, title) => {
+  google.maps.event.addListener(map, 'tilesloaded', () => {
+    try {
+      document.getElementById('map')
+        .querySelector('iframe')
+        .title = title;
+    } catch (e) {
+      console.warn('Could not set map title', e);
+    }
+
+    return map;
+  });
+};
+
+export const isHome = () => (document.getElementById('neighborhoods-select') !== null);
+
 /**
  * Common database helper functions.
  */
-class DBHelper {
+export class DBHelper {
 
   /**
    * Database URL.
@@ -9,7 +74,7 @@ class DBHelper {
    */
   static get DATABASE_URL() {
     // const port = 8000; // Change this to your server port
-    return "./data/restaurants.json";
+    return "./restaurants.json";
   }
 
   /**
@@ -91,7 +156,7 @@ class DBHelper {
       if (error) {
         callback(error, null);
       } else {
-        let results = restaurants
+        let results = restaurants;
         if (cuisine != 'all') { // filter by cuisine
           results = results.filter(r => r.cuisine_type == cuisine);
         }
@@ -113,9 +178,9 @@ class DBHelper {
         callback(error, null);
       } else {
         // Get all neighborhoods from all restaurants
-        const neighborhoods = restaurants.map((v, i) => restaurants[i].neighborhood)
+        const neighborhoods = restaurants.map((v, i) => restaurants[i].neighborhood);
         // Remove duplicates from neighborhoods
-        const uniqueNeighborhoods = neighborhoods.filter((v, i) => neighborhoods.indexOf(v) == i)
+        const uniqueNeighborhoods = neighborhoods.filter((v, i) => neighborhoods.indexOf(v) == i);
         callback(null, uniqueNeighborhoods);
       }
     });
@@ -131,9 +196,9 @@ class DBHelper {
         callback(error, null);
       } else {
         // Get all cuisines from all restaurants
-        const cuisines = restaurants.map((v, i) => restaurants[i].cuisine_type)
+        const cuisines = restaurants.map((v, i) => restaurants[i].cuisine_type);
         // Remove duplicates from cuisines
-        const uniqueCuisines = cuisines.filter((v, i) => cuisines.indexOf(v) == i)
+        const uniqueCuisines = cuisines.filter((v, i) => cuisines.indexOf(v) == i);
         callback(null, uniqueCuisines);
       }
     });
@@ -151,6 +216,13 @@ class DBHelper {
    */
   static imageUrlForRestaurant(restaurant) {
     return (`/img/${restaurant.photograph}`);
+  }
+
+  /**
+   * Restaurant image URL.
+   */
+  static imageSetUrlForRestaurant(restaurant) {
+    return (`/img/${restaurant.photograph}-200px.jpg 200w, /img/${restaurant.photograph}-500px.jpg 500w, /img/${restaurant.photograph}-630px.jpg 630w, /img/${restaurant.photograph}-800px.jpg 800w`);
   }
 
   /**

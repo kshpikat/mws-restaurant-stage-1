@@ -1,0 +1,39 @@
+{
+  "parser": "babel-eslint",
+  "extends": "eslint:recommended",
+  "plugins": [
+    "html"
+  ],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2017
+  },
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "rules": {
+    "semi": [2, "always"],
+    "no-console": 0
+  },
+  "overrides": [{
+    "files": ["sw.src.js"],
+    "env": {
+      "serviceworker": true
+    }
+  }, {
+    "files": [
+      "workbox-config.js",
+      "gulpfile.babel.js"
+    ],
+    "env": {
+      "node": true
+    },
+    "rules": {
+      "no-console": 0
+    }
+  }],
+  "globals": {
+    "google": true
+  }
+}

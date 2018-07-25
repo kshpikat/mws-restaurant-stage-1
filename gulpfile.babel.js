@@ -1,32 +1,33 @@
 //'use strict';
 
-const path = require('path');
+// const path = require('path');
 const gulp = require('gulp');
-const eslint = require('gulp-eslint');
+// const eslint = require('gulp-eslint');
 const del = require('del');
 const runSequence = require('run-sequence');
-const browserSync = require('browser-sync');
+// const browserSync = require('browser-sync');
 const workboxBuild = require('workbox-build');
+const webpack = require('gulp-webpack');
 //import swPrecache from 'sw-precache';
 const gulpLoadPlugins = require('gulp-load-plugins');
 // import {output as pagespeed} from 'psi';
-const pkg = require('./package.json');
+// const pkg = require('./package.json');
 
 const $ = gulpLoadPlugins();
-const reload = browserSync.reload;
+// const reload = browserSync.reload;
 
 // Lint JavaScript
-gulp.task('lint', () => {
-  gulp.src(['app/js/**/*.js','!node_modules/**'])
-    .pipe(eslint())
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
-  }
-);
+// gulp.task('lint', () => {
+//   gulp.src(['app/js/**/*.js','!node_modules/**'])
+//     .pipe(eslint())
+//     .pipe(eslint.format())
+//     .pipe(eslint.failAfterError());
+//   }
+// );
 
 // Optimize images
-gulp.task('images', () =>
-  gulp.src('app/img/**/*')
+gulp.task('images-png', () =>
+  gulp.src('app/img/**/*.png')
     .pipe($.cache($.imagemin({
       progressive: true,
       interlaced: true
@@ -35,10 +36,48 @@ gulp.task('images', () =>
     .pipe($.size({title: 'images'}))
 );
 
+gulp.task('images-jpg', () => {
+  gulp.src('app/img/*.jpg')
+    .pipe($.responsive({
+      '*.jpg': [{
+        width: 200,
+        rename: { suffix: '-200px' },
+      }, {
+        width: 500,
+        rename: { suffix: '-500px' },
+      }, {
+        width: 630,
+        rename: { suffix: '-630px' },
+      }, {
+        width: 800,
+        rename: { suffix: '-800px' },
+      }, {
+        rename: { suffix: '-original' },
+      }],
+      // Resize all PNG images to be retina ready
+      // '*.png': [{
+      //   width: 250,
+      // }, {
+      //   width: 250 * 2,
+      //   rename: { suffix: '@2x' },
+      // }],
+    }, {
+      quality: 70,
+      progressive: true,
+      withMetadata: false,
+      errorOnUnusedImage: false,
+      passThroughUnused: true,
+
+    }))
+    .pipe(gulp.dest('dist/img'))
+    .pipe($.size({title: 'images'}));
+});
+
 // Copy all files at the root level (app)
 gulp.task('copy', () =>
   gulp.src([
     'app/*',
+    'app/data/*',
     '!app/*.html',
     'node_modules/apache-server-configs/dist/.htaccess'
   ], {
@@ -63,14 +102,14 @@ gulp.task('styles', () => {
 
   // For best performance, don't add Sass partials to `gulp.src`
   return gulp.src([
-    'app/css/**/*.scss',
+    // 'app/css/**/*.scss',
     'app/css/**/*.css'
   ])
     .pipe($.newer('.tmp/css'))
     .pipe($.sourcemaps.init())
-    .pipe($.sass({
-      precision: 10
-    }).on('error', $.sass.logError))
+    // .pipe($.sass({
+    //   precision: 10
+    // }).on('error', $.sass.logError))
     .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
     .pipe(gulp.dest('.tmp/css'))
     // Concatenate and minify styles
@@ -84,35 +123,98 @@ gulp.task('styles', () => {
 // Concatenate and minify JavaScript. Optionally transpiles ES2015 code to ES5.
 // to enable ES2015 support remove the line `"only": "gulpfile.babel.js",` in the
 // `.babelrc` file.
-gulp.task('scripts', () =>
-    gulp.src([
-      // Note: Since we are not using useref in the scripts build pipeline,
-      //       you need to explicitly list your scripts here in the right order
-      //       to be correctly concatenated
-      
-      './app/js/dbhelper.js',
-      './app/js/restaurant_info.js',
-      './app/js/main.js'
-    ])
-      .pipe($.newer('.tmp/js'))
-      .pipe($.sourcemaps.init())
-      .pipe($.babel())
-      .pipe($.sourcemaps.write())
-      .pipe(gulp.dest('.tmp/js'))
-      .pipe($.concat('main.min.js'))
-      .pipe($.uglify({preserveComments: 'some'}))
-      // Output files
-      .pipe($.size({title: 'scripts'}))
-      .pipe($.sourcemaps.write('.'))
-      .pipe(gulp.dest('dist/js'))
-      .pipe(gulp.dest('.tmp/js'))
+// gulp.task('scripts', () =>
+//     gulp.src([
+//       // Note: Since we are not using useref in the scripts build pipeline,
+//       //       you need to explicitly list your scripts here in the right order
+//       //       to be correctly concatenated
+//       // './node_modules/intersection-observer/intersection-observer.js',
+//       './app/js/lazyload.es2015.js',
+//       './app/js/dbhelper.js',
+//       './app/js/restaurant_info.js',
+//       './app/js/main.js'
+//     ])
+//       .pipe($.newer('.tmp/js'))
+//       .pipe($.sourcemaps.init())
+//       .pipe($.babel())
+//       .pipe($.sourcemaps.write())
+//       .pipe(gulp.dest('.tmp/js'))
+//       .pipe($.concat('main.min.js'))
+//       .pipe($.uglify({preserveComments: 'some'}))
+//       // Output files
+//       .pipe($.size({title: 'scripts'}))
+//       .pipe($.sourcemaps.write('.'))
+//       .pipe(gulp.dest('dist/js'))
+//       .pipe(gulp.dest('.tmp/js'))
+// );
+
+gulp.task('scripts-webpack', () => {
+    gulp.src('')
+      .pipe(webpack({
+        entry: {
+          main: "./app/js/main.js",
+          restaurant: "./app/js/restaurant.js"
+        },
+        output: {
+          filename: '[name].js',
+        },
+        module: {
+          rules: [
+            {
+              test: /\.js$/,
+              exclude: /node_modules/,
+              use: {
+                loader: "babel-loader",
+                options: {
+                  presets: ["env"]
+                }
+              }
+            },
+          ]
+        }
+      }))
+      .pipe(gulp.dest('dist/js'));
+  }
 );
+
+// gulp.task('scripts-restaurant', () =>
+//     gulp.src('./app/js/restaurant.js')
+//       .pipe($.newer('.tmp'))
+//       .pipe($.sourcemaps.init())
+//       .pipe($.babel())
+//       .pipe($.sourcemaps.write())
+//       .pipe(gulp.dest('.tmp'))
+//       .pipe($.concat('restaurant.js'))
+//       // .pipe($.uglify({preserveComments: 'some'}))
+//       // Output files
+//       .pipe($.size({title: 'scripts'}))
+//       .pipe($.sourcemaps.write('.'))
+//       // .pipe(gulp.dest('dist/js'))
+//       .pipe(gulp.dest('./app/js/restaurant.babel.js'))
+// );
+
+// gulp.task('scripts-main', () =>
+//     gulp.src('./app/js/main.js')
+//       .pipe($.newer('.tmp'))
+//       .pipe($.sourcemaps.init())
+//       .pipe($.babel())
+//       .pipe($.sourcemaps.write())
+//       .pipe(gulp.dest('.tmp'))
+//       .pipe($.concat('main.js'))
+//       // .pipe($.uglify({preserveComments: 'some'}))
+//       // Output files
+//       .pipe($.size({title: 'scripts'}))
+//       .pipe($.sourcemaps.write('.'))
+//       // .pipe(gulp.dest('dist/js'))
+//       .pipe(gulp.dest('./app/js/main.babel.js'))
+// );
+
 
 // Scan your HTML for assets & optimize them
 gulp.task('html', () => {
   return gulp.src('app/**/*.html')
     .pipe($.useref({
-      searchPath: '{.tmp,app}',
+      searchPath: '{.tmp, app}',
       noAssets: true
     }))
 
@@ -137,48 +239,54 @@ gulp.task('html', () => {
 gulp.task('clean', () => del(['.tmp', 'dist/*', '!dist/.git'], {dot: true}));
 
 // Watch files for changes & reload
-gulp.task('serve', ['scripts', 'styles'], () => {
-  browserSync({
-    notify: false,
-    // Customize the Browsersync console logging prefix
-    logPrefix: 'WSK',
-    // Allow scroll syncing across breakpoints
-    scrollElementMapping: ['main', '.mdl-layout'],
-    // Run as an https by uncommenting 'https: true'
-    // Note: this uses an unsigned certificate which on first access
-    //       will present a certificate warning in the browser.
-    // https: true,
-    server: ['.tmp', 'app'],
-    port: 3000
-  });
+// gulp.task('serve', ['scripts', 'styles'], () => {
+//   browserSync({
+//     notify: false,
+//     // Customize the Browsersync console logging prefix
+//     logPrefix: 'WSK',
+//     // Allow scroll syncing across breakpoints
+//     scrollElementMapping: ['main', '.mdl-layout'],
+//     // Run as an https by uncommenting 'https: true'
+//     // Note: this uses an unsigned certificate which on first access
+//     //       will present a certificate warning in the browser.
+//     // https: true,
+//     server: ['.tmp', 'app'],
+//     port: 3000
+//   });
 
-  gulp.watch(['app/**/*.html'], reload);
-  gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
-  gulp.watch(['app/scripts/**/*.js'], ['lint', 'scripts', reload]);
-  gulp.watch(['app/images/**/*'], reload);
-});
+//   gulp.watch(['app/**/*.html'], reload);
+//   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
+//   gulp.watch(['app/scripts/**/*.js'], ['lint', 'scripts', reload]);
+//   gulp.watch(['app/images/**/*'], reload);
+// });
 
 // Build and serve the output from the dist build
-gulp.task('serve:dist', ['default'], () =>
-  browserSync({
-    notify: false,
-    logPrefix: 'WSK',
-    // Allow scroll syncing across breakpoints
-    scrollElementMapping: ['main', '.mdl-layout'],
-    // Run as an https by uncommenting 'https: true'
-    // Note: this uses an unsigned certificate which on first access
-    //       will present a certificate warning in the browser.
-    // https: true,
-    server: 'dist',
-    port: 3001
-  })
-);
+// gulp.task('serve:dist', ['default'], () =>
+//   browserSync({
+//     notify: false,
+//     logPrefix: 'WSK',
+//     // Allow scroll syncing across breakpoints
+//     scrollElementMapping: ['main', '.mdl-layout'],
+//     // Run as an https by uncommenting 'https: true'
+//     // Note: this uses an unsigned certificate which on first access
+//     //       will present a certificate warning in the browser.
+//     // https: true,
+//     server: 'dist',
+//     port: 3001
+//   })
+// );
 
 // Build production files, the default task
 gulp.task('default', ['clean'], cb =>
   runSequence(
     'styles',
-    ['lint', 'html', 'scripts', 'images', 'copy'],
+    // 'scripts-restaurant', 
+    // 'scripts-main',
+    'scripts-webpack',
+    'html',  
+    // 'images-jpg', 
+    // 'images-png', 
+    'copy',
     'service-worker',
     cb
   )
@@ -207,14 +315,14 @@ gulp.task('default', ['clean'], cb =>
 // local resources. This should only be done for the 'dist' directory, to allow
 // live reload to work as expected when serving from the 'app' directory.
 gulp.task('service-worker', () => {
-  const rootDir = 'dist';
-  const filepath = path.join(rootDir, 'sw.js');
+  // const rootDir = 'dist';
+  // const filepath = path.join(rootDir, 'sw.js');
   return workboxBuild.injectManifest({
-    swSrc: 'app/sw.src.js',
+    swSrc: 'sw.src.js',
     swDest: 'dist/sw.js',
     globDirectory: 'dist',
     globPatterns: [
-      '**\/*.{js,css,html,png}',
+      '**/*.{js,css,html,png}',
     ]
   }).then((precached) => {
     precached.warnings.forEach(console.warn);
