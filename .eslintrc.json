@@ -1,6 +1,13 @@
 {
   "extends": ["airbnb-base"],
   "rules": {
-    "linebreak-style": 0
+    "linebreak-style": 0,
+    "no-restricted-globals": 0,
+    "comma-dangle": 0
+  },
+  "globals": {
+    "document": false,
+    "self": false,
+    "window": false
   }
 }

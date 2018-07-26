@@ -1,2 +1,3 @@
+dist/**/*
 **/*.min.js
-service-worker.js
+sw.src.js
