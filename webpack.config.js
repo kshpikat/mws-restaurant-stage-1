@@ -9,16 +9,19 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const autoprefixer = require('autoprefixer');
 const responsiveLoaderSharp = require('responsive-loader/sharp');
 const HtmlCriticalWebpackPlugin = require('html-critical-webpack-plugin');
+const { InjectManifest } = require('workbox-webpack-plugin');
 
-const devMode = process.env.NODE_ENV !== 'production';
+const devMode = false;
 
 module.exports = {
+  // context: path.resolve(__dirname, "app"),
   mode: 'development',
   entry: {
     main: './app/js/main.js',
     restaurant: './app/js/restaurant.js'
   },
   output: {
+    pathinfo: true,
     path: path.resolve(__dirname, 'dist'),
     filename: 'js/[name].js',
   },
@@ -30,7 +33,7 @@ module.exports = {
       })
     ]
   },
-  devtool: 'inline-source-map',
+  // devtool: 'inline-source-map',
   devServer: {
     contentBase: './dist',
     port: 8000,
@@ -48,7 +51,7 @@ module.exports = {
     }),
     new CopyWebpackPlugin([
       {
-        from: './data/**/*.json',
+        from: './**/*.json',
         to: '.',
         flatten: true,
         context: './app/'
@@ -88,6 +91,11 @@ module.exports = {
       penthouse: {
         blockJSRequests: false,
       }
+    }),
+    new InjectManifest({
+      swDest: 'sw.js',
+      swSrc: './app/sw.src.js',
+      exclude: [/\.jpg$/, /\.png$/, /\.LICENSE$/]
     })
   ],
   module: {

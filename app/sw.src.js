@@ -1,22 +1,16 @@
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/3.3.1/workbox-sw.js');
-
 workbox.setConfig({ debug: true });
 
 workbox.skipWaiting();
 workbox.clientsClaim();
 
-const backgroundSyncPlugin = new workbox.backgroundSync.Plugin('apiRequestQueue', {
-  maxRetentionTime: 24 * 60 // Retry for max of 24 Hours
-});
-
 workbox.routing.registerRoute(
-  /.*\.(?:js|html|css)/,
+  /.*\.(?:js|html|css|json)/,
   workbox.strategies.cacheFirst({cacheName: workbox.core.cacheNames.precache})
 );
 
 workbox.routing.registerRoute(
-  /.*(?:googleapis|gstatic)\.com.*$/,
-  workbox.strategies.staleWhileRevalidate({cacheName: 'googleapi-cache'})
+  /.*maps\.googleapis\.com\/maps\/api\/staticmap.*$/,
+  workbox.strategies.cacheFirst({cacheName: 'google-maps-static'})
 );
 
 workbox.routing.registerRoute(
@@ -26,4 +20,4 @@ workbox.routing.registerRoute(
 
 workbox.routing.registerNavigationRoute('/index.html');
 
-workbox.precaching.precacheAndRoute([]);
+workbox.precaching.precacheAndRoute(self.__precacheManifest);

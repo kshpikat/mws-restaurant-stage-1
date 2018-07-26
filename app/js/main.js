@@ -1,17 +1,14 @@
 import { oneLineTrim } from 'common-tags';
-import "../css/styles.css";
-import "normalize.css/normalize.css";
+import '../css/styles.css';
+import 'normalize.css/normalize.css';
 
-import loadGoogleMapsApi from "load-google-maps-api";
-import { DBHelper, isHome, titleGoogleMap } from './dbhelper';
+import loadGoogleMapsApi from 'load-google-maps-api';
+import Manifest from '../manifest.json';
+import { DBHelper, titleGoogleMap, registerSW } from './dbhelper';
 import LazyLoad from './lazyload.es2015';
 
 
-// if ('serviceWorker' in navigator) {
-//     window.addEventListener('load', function () {
-//         navigator.serviceWorker.register('/sw.js');
-//     });
-// }
+registerSW();
 
 let globalLazyLoad;
 let globalRestaurants;
@@ -154,10 +151,9 @@ const updateRestaurants = () => {
  *  creates static map image
  */
 const staticMapImage = (height, element) => {
-  const width =
-    window.innerWidth ||
-    document.documentElement.clientWidth ||
-    document.body.clientWidth;
+  const width = window.innerWidth
+    || document.documentElement.clientWidth
+    || document.body.clientWidth;
 
   const url = oneLineTrim`
     https://maps.googleapis.com/maps/api/staticmap?center=40.722216,+-73.987501&

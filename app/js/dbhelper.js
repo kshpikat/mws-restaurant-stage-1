@@ -41,11 +41,13 @@
 //   });
 // };
 
-
-
-
-
-
+export const registerSW = () => {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js');
+    });
+  }
+};
 
 export const titleGoogleMap = (map, title) => {
   google.maps.event.addListener(map, 'tilesloaded', () => {
@@ -61,27 +63,24 @@ export const titleGoogleMap = (map, title) => {
   });
 };
 
-export const isHome = () => (document.getElementById('neighborhoods-select') !== null);
-
 /**
  * Common database helper functions.
  */
 export class DBHelper {
-
   /**
    * Database URL.
    * Change this to restaurants.json file location on your server.
    */
   static get DATABASE_URL() {
     // const port = 8000; // Change this to your server port
-    return "./restaurants.json";
+    return './restaurants.json';
   }
 
   /**
    * Fetch all restaurants.
    */
   static fetchRestaurants(callback) {
-    let xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
     xhr.open('GET', DBHelper.DATABASE_URL);
     xhr.onload = () => {
       if (xhr.status === 200) { // Got a success response from server!
@@ -233,10 +232,9 @@ export class DBHelper {
       position: restaurant.latlng,
       title: restaurant.name,
       url: DBHelper.urlForRestaurant(restaurant),
-      map: map,
-      animation: google.maps.Animation.DROP}
-    );
+      map,
+      animation: google.maps.Animation.DROP
+ });
     return marker;
   }
-
 }
