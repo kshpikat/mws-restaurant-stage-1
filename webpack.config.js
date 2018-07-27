@@ -103,7 +103,7 @@ module.exports = {
     new InjectManifest({
       swDest: 'sw.js',
       swSrc: './app/sw.src.js',
-      exclude: [/\.jpg$/, /\.png$/, /\.LICENSE$/]
+      exclude: [/\.jpg$/, /\.png$/, /\.LICENSE$/, '_redirects']
     })
   ],
   module: {
