@@ -65,6 +65,14 @@ module.exports = {
         context: './app/'
       }
     ]),
+    new CopyWebpackPlugin([
+      {
+        from: './_redirects',
+        to: '.',
+        flatten: true,
+        context: './app/'
+      }
+    ]),
     new DashboardPlugin(),
     new HtmlWebpackPlugin({
       filename: 'index.html',
