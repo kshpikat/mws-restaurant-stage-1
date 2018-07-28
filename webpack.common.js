@@ -9,13 +9,14 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const autoprefixer = require('autoprefixer');
 const responsiveLoaderSharp = require('responsive-loader/sharp');
 const HtmlCriticalWebpackPlugin = require('html-critical-webpack-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const { InjectManifest } = require('workbox-webpack-plugin');
 
 const devMode = false;
 
 module.exports = {
   // context: path.resolve(__dirname, "app"),
-  mode: 'development',
+  mode: devMode ? 'development' : 'production',
   entry: {
     main: './app/js/main.js',
     restaurant: './app/js/restaurant.js'
@@ -23,17 +24,21 @@ module.exports = {
   output: {
     pathinfo: true,
     path: path.resolve(__dirname, 'dist'),
-    filename: 'js/[name].js',
+    filename: 'js/[name].[chunkhash].js',
   },
   optimization: {
     minimize: true,
     minimizer: [
       new UglifyJsPlugin({
-        include: /\.min\.js$/
-      })
+        cache: true,
+        parallel: true,
+        sourceMap: devMode
+        // include: /\.min\.js$/
+      }),
+      new OptimizeCSSAssetsPlugin({})
     ]
   },
-  // devtool: 'inline-source-map',
+  devtool: devMode ? 'inline-source-map' : false,
   devServer: {
     contentBase: './dist',
     port: 8000,
@@ -77,11 +82,13 @@ module.exports = {
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: './app/index.html',
+      minify: true,
       chunks: ['main']
     }),
     new HtmlWebpackPlugin({
       filename: 'restaurant.html',
       template: './app/restaurant.html',
+      minify: true,
       chunks: ['restaurant']
     }),
     new MiniCssExtractPlugin({
@@ -100,6 +107,19 @@ module.exports = {
         blockJSRequests: false,
       }
     }),
+    new HtmlCriticalWebpackPlugin({
+      base: 'dist',
+      src: 'restaurant.html',
+      dest: 'restaurant.html',
+      inline: true,
+      minify: true,
+      extract: true,
+      width: 1300,
+      height: 900,
+      penthouse: {
+        blockJSRequests: false,
+      }
+    }),
     new InjectManifest({
       swDest: 'sw.js',
       swSrc: './app/sw.src.js',
@@ -108,6 +128,15 @@ module.exports = {
   ],
   module: {
     rules: [
+      {
+        test: /\.html$/,
+        use: [{
+          loader: 'html-loader',
+          options: {
+            minimize: true
+          }
+        }]
+      },
       {
         test: /\.js$/,
         exclude: /node_modules/,
