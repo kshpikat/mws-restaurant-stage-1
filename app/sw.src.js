@@ -14,6 +14,16 @@ workbox.routing.registerRoute(
 );
 
 workbox.routing.registerRoute(
+  /.*maps\.googleapis\.com\/maps\/api\/staticmap.*$/,
+  workbox.strategies.cacheFirst({cacheName: 'google-maps-static'})
+);
+
+workbox.routing.registerRoute(
+  /.*mws-stage-2-.*\.now\.sh\/restaurants$/,
+  workbox.strategies.staleWhileRevalidate({cacheName: 'api-server'})
+);
+
+workbox.routing.registerRoute(
   /.*\.(?:png|jpe?g|svg|gif)/,
   workbox.strategies.cacheFirst({cacheName: 'img-cache'})
 );

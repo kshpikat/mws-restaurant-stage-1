@@ -1,10 +1,8 @@
 import lf from 'localforage';
 import _ from 'underscore';
 
-const apiServer = 'https://mws-stage-2-nehlregqhh.now.sh';
-const apiAllRestaurants = `${apiServer}/restaurants`;
-
-const dbAllItems = 'restaurants';
+// const getServerUrl = () => 'https://mws-stage-2-nehlregqhh.now.sh';
+const getAllRestUrl = () => 'https://mws-stage-2-nehlregqhh.now.sh/restaurants';
 
 lf.config({
   driver: lf.INDEXEDDB,
@@ -13,32 +11,32 @@ lf.config({
   storeName: 'restreviews_1'
 });
 
-export const loadRestaurants = () => {
-  fetch(apiAllRestaurants)
-    .then((response) => {
-      response.json()
-        .then((json) => {
-          lf.setItem(dbAllItems, JSON.stringify(json));
-        })
-        .then(() => {
-          lf.getItem(dbAllItems);
-        })
-        .then((restaurants) => {
-          JSON.parse(restaurants);
-        });
+const getFromDB = key => lf.getItem(key)
+  .then(value => JSON.parse(value)).catch(error => console.log(error));
+
+export const loadRestaurants = () => fetch(getAllRestUrl(), { credentials: 'omit' })
+  .then(response => response
+    .json()
+    .then((json) => {
+      console.log('This JSON came from fetch', json);
+      return lf.setItem('restaurants', JSON.stringify(json));
     })
-    .catch(() => {
-      console.error("Can not fetch restaurant data. Trying to get it from IndexedDB...");
-      getFromIndexeDB(dbAllItems);
-    });
-};
+    .then(() => lf.getItem('restaurants'))
+    .then((restaurants) => {
+      const json = JSON.parse(restaurants);
+      console.log('This JSON came back from DB ', json);
+      return json;
+    }))
+  .catch(() => {
+    //  network failure or offline situation
+    console.log(
+      'Can not fetch restaurant data. Trying to get it from IndexedDB...'
+    );
+    return getFromDB('restaurants');
+  });
 
-const getFromIndexeDB = ItemName => lf.getItem(ItemName)
-  .then(value => JSON.parse(value))
-  .catch(error => console.log(error));
-
-export const getRestById = (id, restaurants) => restaurants.find(r => r.id === id);
-export const getRestByCuisine = (cuisine, restaurants) => restaurants.filter(r => r.cuisine_type === cuisine);
+export const getRestById = (needle, restaurants) => restaurants.find(r => r.id === needle);
+export const getRestByCuisine = (needle, restaurants) => restaurants.filter(r => r.cuisine_type === needle);
 
 export const getRestByCuisineNeighborhood = (cuisine, neighborhood, restaurants) => {
   let results = restaurants;
@@ -51,18 +49,9 @@ export const getRestByCuisineNeighborhood = (cuisine, neighborhood, restaurants)
   return results;
 };
 
-const getUniqueFieldValuesFromAssocArray = (arr, key) => _.uniq(_.pluck(arr, key));
-
-export const getNeighborhoods = (restaurants) => {
-  const key = 'neighborhood';
-  return getUniqueFieldValuesFromAssocArray(restaurants, key);
-};
-
-export const getCuisines = (restaurants) => {
-  const key = 'cuisine_type';
-  return getUniqueFieldValuesFromAssocArray(restaurants, key);
-};
-
+const getUniqValsFromAssocArray = (arr, key) => _.uniq(_.pluck(arr, key));
+export const getNeighborhoods = restaurants => getUniqValsFromAssocArray(restaurants, 'neighborhood');
+export const getCuisines = restaurants => getUniqValsFromAssocArray(restaurants, 'cuisine_type');
 export const urlForRestaurant = restaurant => `./restaurant.html?id=${restaurant.id}`;
 
 export const mapMarkerForRestaurant = (restaurant, map) => {
@@ -70,7 +59,29 @@ export const mapMarkerForRestaurant = (restaurant, map) => {
     position: restaurant.latlng,
     title: restaurant.name,
     url: urlForRestaurant(restaurant),
-    map: map
+    map
   });
   return marker;
+};
+
+export const titleGoogleMap = (map, title) => {
+  google.maps.event.addListener(map, 'tilesloaded', () => {
+    try {
+      document.getElementById('map')
+        .querySelector('iframe')
+        .title = title;
+    } catch (e) {
+      console.warn('Could not set map title', e);
+    }
+
+    return map;
+  });
+};
+
+export const registerSW = () => {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js');
+    });
+  }
 };
