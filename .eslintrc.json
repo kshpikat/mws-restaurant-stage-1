@@ -1,0 +1,21 @@
+{
+  "parser": "babel-eslint",
+  "extends": ["airbnb-base"],
+  "parserOptions": {
+    "ecmaVersion": 6
+  },
+  "rules": {
+    "linebreak-style": 0,
+    "no-restricted-globals": 0,
+    "comma-dangle": 0,
+	"quotes": 1
+  },
+  "plugins": [
+    "html"
+  ],
+  "globals": {
+    "document": false,
+    "self": false,
+    "window": false
+  }
+}
