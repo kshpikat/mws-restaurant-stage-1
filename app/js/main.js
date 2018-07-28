@@ -16,12 +16,19 @@ import {
 import LazyLoad from './lazyload.es2015';
 import '../manifest.json';
 
-// registerSW();
+registerSW();
 
 let globalLazyLoad;
+let globalRestCache;
 let globalMap;
 let markers = [];
 let globalMapLoaded;
+
+const setRestCache = (restaurants) => {
+  globalRestCache = restaurants;
+};
+
+const getRestCache = () => globalRestCache;
 
 const resetRestaurants = () => {
   // Remove all restaurants
@@ -127,6 +134,18 @@ const addInteractiveMap = elementId => new Promise((resolve, reject) => {
   }
 });
 
+const addMarkersToMap = (restaurants) => {
+  if (globalMapLoaded) {
+    restaurants.forEach((restaurant) => {
+      const marker = mapMarkerForRestaurant(restaurant, globalMap);
+      google.maps.event.addListener(marker, 'click', () => {
+        window.location.href = marker.url;
+      });
+      markers.push(marker);
+    });
+  }
+};
+
 const initMap = (height, elementId) => new Promise(((resolve, reject) => {
   if (!document.querySelector(`#${elementId}`)) {
     console.error('No place to draw the map', elementId);
@@ -135,8 +154,8 @@ const initMap = (height, elementId) => new Promise(((resolve, reject) => {
   if (window.matchMedia('(max-width:600px)').matches) {
     // optimize performance for phones
     staticMapImage(height, elementId);
-    document.querySelector(`#${elementId}`).addEventListener(
-      'mouseover', () => { addInteractiveMap(elementId); },
+    document.querySelector('#mapImage').addEventListener(
+      'mouseover', () => { addInteractiveMap(elementId).then(() => { addMarkersToMap(globalRestCache); }); },
       { once: true }
     );
   } else {
@@ -145,26 +164,12 @@ const initMap = (height, elementId) => new Promise(((resolve, reject) => {
   }
 }));
 
-const addMarkersToMap = (restaurants, elementId) => {
-  addInteractiveMap(elementId)
-    .then((googleMap) => {
-      restaurants.forEach((restaurant) => {
-        const marker = mapMarkerForRestaurant(restaurant, globalMap);
-        google.maps.event.addListener(marker, 'click', () => {
-          window.location.href = marker.url;
-        });
-        markers.push(marker);
-      });
-    });
-};
-
 const fillRestaurantsHTML = (restaurants) => {
-  console.warn(restaurants);
+  console.log('fillRestaurantsHTML main.js:162', restaurants);
   const ul = document.querySelector('#restaurants-list');
   restaurants.forEach((restaurant) => {
     ul.append(createRestaurantHTML(restaurant));
   });
-  addMarkersToMap(restaurants, 'map');
   globalLazyLoad = new LazyLoad();
 };
 
@@ -193,13 +198,11 @@ const updateRestaurants = (restaurants = false) => {
   const cuisine = cSelect[cIndex].value;
   const neighborhood = nSelect[nIndex].value;
 
-  loadRestaurants()
-    .then((response) => {
-      const filtered = getRestByCuisineNeighborhood(cuisine, neighborhood, response);
-      resetRestaurants();
-      fillRestaurantsHTML(filtered);
-    })
-    .catch(err => console.error(err));
+  const filtered = getRestByCuisineNeighborhood(cuisine, neighborhood, restaurants);
+  resetRestaurants();
+  fillRestaurantsHTML(filtered);
+  addMarkersToMap(filtered);
+  setRestCache(filtered);
 };
 
 const loadAndUpdateRestaurants = () => {
