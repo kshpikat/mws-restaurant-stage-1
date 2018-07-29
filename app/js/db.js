@@ -14,22 +14,20 @@ lf.config({
 const getFromDB = key => lf.getItem(key)
   .then(value => JSON.parse(value)).catch(error => console.log(error));
 
-export const loadRestaurants = () => {
-  console.log('Call fetch API', getAllRestUrl());
-  return fetch(getAllRestUrl(), { credentials: 'omit' })
-    .then(response => response
-      .json()
-      .then(json => lf.setItem('restaurants', JSON.stringify(json)))
-      .then(() => lf.getItem('restaurants'))
-      .then(restaurants => JSON.parse(restaurants)))
-    .catch(() => {
-      // offline
-      console.log(
-        'Can not fetch restaurant data. Trying to get it from IndexedDB...'
-      );
-      return getFromDB('restaurants');
-    });
-};
+export const loadRestaurants = () => fetch(getAllRestUrl(), { credentials: 'omit' })
+  .then(response => response
+    .json()
+    .then(json => lf.setItem('restaurants', JSON.stringify(json)))
+    .then(() => lf.getItem('restaurants'))
+    .then(restaurants => JSON.parse(restaurants)))
+  .catch(() => {
+    // offline
+    console.log(
+      'Can not fetch restaurant data. Trying to get it from IndexedDB...'
+    );
+    return getFromDB('restaurants');
+  });
+
 
 export const getRestById = (needle, restaurants) => restaurants.find(r => String(r.id) === String(needle));
 export const getRestByCuisine = (needle, restaurants) => restaurants.filter(r => r.cuisine_type === needle);

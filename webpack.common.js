@@ -123,7 +123,7 @@ module.exports = {
     new InjectManifest({
       swDest: 'sw.js',
       swSrc: './app/sw.src.js',
-      exclude: [/\.jpg$/, /\.png$/, /\.LICENSE$/, '_redirects']
+      exclude: [/\.png$/, /\.LICENSE$/, '_redirects']
     })
   ],
   module: {
@@ -168,9 +168,9 @@ module.exports = {
             loader: 'responsive-loader',
             options: {
               adapter: responsiveLoaderSharp,
-              sizes: [200, 500, 630, 800],
+              sizes: [200, 500, 800],
               placeholder: true,
-              placeholderSize: 50
+              placeholderSize: 100
             }
           }
         ]

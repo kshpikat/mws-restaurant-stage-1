@@ -51,7 +51,7 @@ const createRestaurantHTML = (restaurant) => {
   image.alt = `Photo for ${restaurant.name}`;
   li.append(image);
 
-  const name = document.createElement('h1');
+  const name = document.createElement('h3');
   name.innerHTML = restaurant.name;
   li.append(name);
 
@@ -65,6 +65,7 @@ const createRestaurantHTML = (restaurant) => {
 
   const more = document.createElement('a');
   more.innerHTML = 'View Details';
+  more.setAttribute('role', 'button');
   more.href = urlForRestaurant(restaurant);
   li.append(more);
 
