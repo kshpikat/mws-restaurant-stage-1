@@ -47,7 +47,7 @@ workbox.routing.registerRoute(
 );
 
 workbox.routing.registerRoute(
-  /.*maps\.googleapis\.com\/maps-api-.*(?<!stats\.js)$/,
+  /.+maps\.googleapis\.com\/maps-api-v3\/api\/js\/[^\/]+\/[^\/]+\/(?!stats\.js).+/,
   workbox.strategies.staleWhileRevalidate({
     cacheableResponse: {statuses: [0, 200]},
     cacheName: 'googleapi-app-js-cache',

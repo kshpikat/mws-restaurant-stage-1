@@ -1,8 +1,14 @@
+import { MDCDialog } from '@material/dialog';
+import { MDCTextField } from '@material/textfield';
+import { MDCRipple } from '@material/ripple';
 import '../css/styles.css';
+import '../css/common.scss';
+import '../css/dialog.scss';
 import 'normalize.css/normalize.css';
 import _ from 'underscore';
 import LazyLoad from './lazyload.es2015';
 import '../manifest.json';
+
 
 import {
   isInteractiveMapLoaded,
@@ -16,7 +22,9 @@ import {
   getRestById,
 } from './db';
 
-registerSW();
+if (process.env.NODE_ENV !== 'development') {
+  registerSW();
+}
 
 let globalLazyLoad;
 let globalRestCache;
@@ -99,7 +107,7 @@ const fillRestaurantHTML = (restaurant) => {
     image.setAttribute('data-srcset', img.srcSet);
     image.className = 'restaurant-img lazyload';
     image.alt = `Photo for ${restaurant.name}`;
-    globalLazyLoad = new LazyLoad();
+    globalLazyLoad = new LazyLoad({ threshold: 0 });
   }
 
   const cuisine = document.getElementById('restaurant-cuisine');
@@ -133,7 +141,23 @@ const renderMap = () => {
     });
 };
 
+const initDialog = () => {
+  const dialog = new MDCDialog(document.querySelector('#my-mdc-dialog'));
+
+  dialog.listen('MDCDialog:accept', () => console.log('accepted'));
+  dialog.listen('MDCDialog:cancel', () => console.log('canceled'));
+  document.querySelector('#add-review')
+    .addEventListener('click', (event) => {
+      dialog.lastFocusedTarget = event.target;
+      dialog.show();
+    });
+
+  const buttonRipple = new MDCRipple(document.querySelector('.mdc-button'));
+  const textField = new MDCTextField(document.querySelector('.mdc-text-field'));
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+  initDialog();
   loadRestaurants()
     .then((restaurants) => {
       const id = getParameterByName('id');

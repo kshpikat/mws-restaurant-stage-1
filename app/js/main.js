@@ -20,8 +20,9 @@ import {
   cleanMarkers
 } from './map';
 
-
-registerSW();
+if (process.env.NODE_ENV !== 'development') {
+  registerSW();
+}
 
 let globalLazyLoad;
 let globalRestCache;
@@ -80,7 +81,7 @@ const fillRestaurantsHTML = (restaurants) => {
   restaurants.forEach((restaurant) => {
     ul.append(createRestaurantHTML(restaurant));
   });
-  globalLazyLoad = new LazyLoad();
+  globalLazyLoad = new LazyLoad({ threshold: 0 });
 };
 
 const fillCuisinesHTML = (cuisines) => {
