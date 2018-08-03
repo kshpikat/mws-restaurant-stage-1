@@ -66,10 +66,18 @@
     ">1%"
   ],
   "dependencies": {
+    "@material/auto-init": "^0.38.0",
     "@material/button": "^0.38.0",
+    "@material/card": "^0.38.0",
     "@material/dialog": "^0.38.0",
+    "@material/fab": "^0.38.0",
+    "@material/form-field": "^0.38.0",
+    "@material/icon-button": "^0.38.0",
+    "@material/radio": "^0.38.0",
     "@material/ripple": "^0.38.0",
+    "@material/select": "^0.38.0",
     "@material/textfield": "^0.38.0",
+    "@material/typography": "^0.38.0",
     "common-tags": "^1.8.0",
     "es6-promise": "^4.2.4",
     "google-maps-promise": "^2.1.0",

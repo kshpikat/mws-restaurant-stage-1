@@ -1,3 +1,7 @@
+import { oneLineTrim } from 'common-tags';
+import { MDCRipple } from '@material/ripple';
+import '../css/common.scss';
+import '../css/card.scss';
 import '../css/styles.css';
 import 'normalize.css/normalize.css';
 import LazyLoad from './lazyload.es2015';
@@ -28,12 +32,10 @@ let globalLazyLoad;
 let globalRestCache;
 
 const setRestCache = (restaurants) => { globalRestCache = restaurants; };
+const getRestContainerEl = () => document.querySelector('.cards');
 
 const resetRestaurants = () => {
-  // Remove all restaurants
-  const ul = document.getElementById('restaurants-list');
-  ul.innerHTML = '';
-
+  getRestContainerEl().innerHTML = '';
   cleanMarkers();
 };
 
@@ -73,14 +75,69 @@ const createRestaurantHTML = (restaurant) => {
   return li;
 };
 
+const getHTMLFromElement = (el) => {
+  const wrap = document.createElement('div');
+  wrap.append(el);
+  return wrap.innerHTML;
+};
+
+const createRestaurantCardHTML = (restaurant) => {
+  const wrap = document.createElement('div');
+  const image = document.createElement('img');
+  image.className = 'restaurant-img lazyload';
+  const img = require(`../img/${restaurant.id}.jpg`);
+  image.src = img.placeholder;
+  image.setAttribute('data-src', img.src);
+  image.setAttribute('data-srcset', img.srcSet);
+  image.setAttribute('style', 'width:100%');
+  image.alt = `Photo for ${restaurant.name}`;
+  const imageHTML = getHTMLFromElement(image);
+
+  const cardHTML = oneLineTrim`
+  <div class="mdc-card demo-card demo-card--hero">
+  <div class="mdc-card__primary-action mdc-ripple-upgraded" tabindex="0">
+      <div class="mdc-card__media demo-card__media">
+        ${imageHTML}
+      </div>
+      <div class="demo-card__primary">
+          <h3 class="demo-card__title mdc-typography--headline6">
+            ${restaurant.name}
+          </h3>
+      </div>
+      <div class="demo-card__secondary mdc-typography--body2">
+          ${restaurant.neighborhood}<br>
+          ${restaurant.address}
+      </div>
+  </div>
+  <div class="mdc-card__actions">
+      <div class="mdc-card__action-buttons">
+          <a href="${urlForRestaurant(restaurant)}" class="mdc-button mdc-card__action mdc-card__action--button mdc-ripple-upgraded">
+              View
+          </a>
+      </div>
+      <div class="mdc-card__action-icons">
+          <button class="mdc-icon-button material-icons mdc-card__action mdc-card__action--icon mdc-ripple-upgraded--unbounded mdc-ripple-upgraded" aria-pressed="false" aria-label="Add to favorites" title="Add to favorites" data-toggle-on-content="favorite" data-toggle-on-label="Remove from favorites" data-toggle-off-content="favorite_border" data-toggle-off-label="Add to favorites">favorite</button>
+      </div>
+  </div>
+</div>
+  `;
+
+  return cardHTML;
+};
+
 const fillRestaurantsHTML = (restaurants) => {
   if (isDevMode()) {
     console.log('fillRestaurantsHTML main.js:162', restaurants);
   }
-  const ul = document.querySelector('#restaurants-list');
+  // const ul = document.querySelector('#restaurants-list');
+  // restaurants.forEach((restaurant) => {
+  //   ul.append(createRestaurantHTML(restaurant));
+  // });
+  let cardsHTML = '';
   restaurants.forEach((restaurant) => {
-    ul.append(createRestaurantHTML(restaurant));
+    cardsHTML += createRestaurantCardHTML(restaurant);
   });
+  getRestContainerEl().innerHTML = cardsHTML;
   globalLazyLoad = new LazyLoad({ threshold: 0 });
 };
 
@@ -153,11 +210,24 @@ const renderMap = () => {
     });
 };
 
+const initMaterial = () => {
+  const ripples = [];
+  document.querySelectorAll('.mdc-card__primary-action').forEach(el => ripples.push(new MDCRipple(el)));
+  document.querySelectorAll('.mdc-button').forEach(el => ripples.push(new MDCRipple(el)));
+  document.querySelectorAll('.mdc-icon-button')
+    .forEach((el) => {
+      const ripple = new MDCRipple(el);
+      ripple.unbounded = true;
+      ripples.push(ripple);
+    });
+};
+
 
 document.addEventListener('DOMContentLoaded', () => {
   renderMap();
   document.getElementById('neighborhoods-select').addEventListener('change', loadAndUpdateRestaurants);
   document.getElementById('cuisines-select').addEventListener('change', loadAndUpdateRestaurants);
+  initMaterial();
 });
 
 window.addEventListener('resize', () => {

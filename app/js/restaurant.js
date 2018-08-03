@@ -1,6 +1,8 @@
 import { MDCDialog } from '@material/dialog';
 import { MDCTextField } from '@material/textfield';
 import { MDCRipple } from '@material/ripple';
+import { MDCFormField } from '@material/form-field';
+import { MDCRadio } from '@material/radio';
 import '../css/styles.css';
 import '../css/common.scss';
 import '../css/dialog.scss';
@@ -141,23 +143,64 @@ const renderMap = () => {
     });
 };
 
-const initDialog = () => {
-  const dialog = new MDCDialog(document.querySelector('#my-mdc-dialog'));
+const getRadioValue = (radioName) => {
+  const radios = document.getElementsByName(radioName);
+  let result = false;
+  radios.forEach((val, i) => {
+    if (radios[i].checked) {
+      result = radios[i].value;
+    }
+  });
+  return result;
+};
 
-  dialog.listen('MDCDialog:accept', () => console.log('accepted'));
+const resetRadio = (radioName) => {
+  const radios = document.getElementsByName(radioName);
+  radios.forEach((val, i) => {
+    radios[i].checked = false;
+  });
+};
+
+const resetText = (textSelector) => {
+  const text = document.querySelector(textSelector);
+  if (text) {
+    text.value = '';
+  }
+};
+
+const resetDialog = () => {
+  resetRadio('radios');
+  resetText('#text');
+};
+
+const initDialog = (dialogSelector) => {
+  const dialog = new MDCDialog(document.querySelector(dialogSelector));
+
+  dialog.listen('MDCDialog:accept', () => {
+    console.log('accepted');
+    console.log('radio', getRadioValue('radios'));
+    console.log('text', document.querySelector('#text').value);
+    resetDialog();
+  });
   dialog.listen('MDCDialog:cancel', () => console.log('canceled'));
-  document.querySelector('#add-review')
-    .addEventListener('click', (event) => {
+  document.querySelectorAll('.add-review-button').forEach((el) => {
+    el.addEventListener('click', (event) => {
       dialog.lastFocusedTarget = event.target;
       dialog.show();
     });
-
+  });
+  const fabRipple = new MDCRipple(document.querySelector('.mdc-fab'));
   const buttonRipple = new MDCRipple(document.querySelector('.mdc-button'));
   const textField = new MDCTextField(document.querySelector('.mdc-text-field'));
+  const radio = new MDCRadio(document.querySelector('.mdc-radio'));
+  const formField = new MDCFormField(document.querySelector('.mdc-form-field'));
+  formField.input = radio;
+
+  document.querySelector('.mdc-fab--exited').classList.remove('mdc-fab--exited');
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  initDialog();
+  initDialog('#my-mdc-dialog');
   loadRestaurants()
     .then((restaurants) => {
       const id = getParameterByName('id');
