@@ -1,9 +1,10 @@
 import { oneLineTrim } from 'common-tags';
 import { MDCRipple } from '@material/ripple';
+import { MDCIconToggle } from '@material/icon-toggle';
+import 'normalize.css/normalize.css';
 import '../css/common.scss';
 import '../css/card.scss';
 import '../css/styles.css';
-import 'normalize.css/normalize.css';
 import LazyLoad from './lazyload.es2015';
 import '../manifest.json';
 
@@ -13,7 +14,9 @@ import {
   getCuisines,
   getNeighborhoods,
   getRestByCuisineNeighborhood,
-  urlForRestaurant
+  urlForRestaurant,
+  sendFavorite,
+  setFavorite
 } from './db';
 
 import {
@@ -42,38 +45,38 @@ const resetRestaurants = () => {
 /**
  * Create restaurant HTML.
  */
-const createRestaurantHTML = (restaurant) => {
-  const li = document.createElement('li');
+// const createRestaurantHTML = (restaurant) => {
+//   const li = document.createElement('li');
 
-  const image = document.createElement('img');
-  image.className = 'restaurant-img lazyload';
-  const img = require(`../img/${restaurant.id}.jpg`);
-  image.src = img.placeholder;
-  image.setAttribute('data-src', img.src);
-  image.setAttribute('data-srcset', img.srcSet);
-  image.alt = `Photo for ${restaurant.name}`;
-  li.append(image);
+//   const image = document.createElement('img');
+//   image.className = 'restaurant-img lazyload';
+//   const img = require(`../img/${restaurant.id}.jpg`);
+//   image.src = img.placeholder;
+//   image.setAttribute('data-src', img.src);
+//   image.setAttribute('data-srcset', img.srcSet);
+//   image.alt = `Photo for ${restaurant.name}`;
+//   li.append(image);
 
-  const name = document.createElement('h3');
-  name.innerHTML = restaurant.name;
-  li.append(name);
+//   const name = document.createElement('h3');
+//   name.innerHTML = restaurant.name;
+//   li.append(name);
 
-  const neighborhood = document.createElement('p');
-  neighborhood.innerHTML = restaurant.neighborhood;
-  li.append(neighborhood);
+//   const neighborhood = document.createElement('p');
+//   neighborhood.innerHTML = restaurant.neighborhood;
+//   li.append(neighborhood);
 
-  const address = document.createElement('p');
-  address.innerHTML = restaurant.address;
-  li.append(address);
+//   const address = document.createElement('p');
+//   address.innerHTML = restaurant.address;
+//   li.append(address);
 
-  const more = document.createElement('a');
-  more.innerHTML = 'View Details';
-  more.setAttribute('role', 'button');
-  more.href = urlForRestaurant(restaurant);
-  li.append(more);
+//   const more = document.createElement('a');
+//   more.innerHTML = 'View Details';
+//   more.setAttribute('role', 'button');
+//   more.href = urlForRestaurant(restaurant);
+//   li.append(more);
 
-  return li;
-};
+//   return li;
+// };
 
 const getHTMLFromElement = (el) => {
   const wrap = document.createElement('div');
@@ -81,8 +84,10 @@ const getHTMLFromElement = (el) => {
   return wrap.innerHTML;
 };
 
-const createRestaurantCardHTML = (restaurant) => {
+const createRestaurantCardEl = (restaurant) => {
   const wrap = document.createElement('div');
+  wrap.className = 'mdc-card demo-card demo-card--hero';
+
   const image = document.createElement('img');
   image.className = 'restaurant-img lazyload';
   const img = require(`../img/${restaurant.id}.jpg`);
@@ -94,7 +99,6 @@ const createRestaurantCardHTML = (restaurant) => {
   const imageHTML = getHTMLFromElement(image);
 
   const cardHTML = oneLineTrim`
-  <div class="mdc-card demo-card demo-card--hero">
   <div class="mdc-card__primary-action mdc-ripple-upgraded" tabindex="0">
       <div class="mdc-card__media demo-card__media">
         ${imageHTML}
@@ -115,14 +119,47 @@ const createRestaurantCardHTML = (restaurant) => {
               View
           </a>
       </div>
-      <div class="mdc-card__action-icons">
-          <button class="mdc-icon-button material-icons mdc-card__action mdc-card__action--icon mdc-ripple-upgraded--unbounded mdc-ripple-upgraded" aria-pressed="false" aria-label="Add to favorites" title="Add to favorites" data-toggle-on-content="favorite" data-toggle-on-label="Remove from favorites" data-toggle-off-content="favorite_border" data-toggle-off-label="Add to favorites">favorite</button>
-      </div>
+      <div class="mdc-card__action-icons"></div>
   </div>
-</div>
   `;
 
-  return cardHTML;
+  wrap.innerHTML = cardHTML;
+  const favorite = wrap.querySelector('.mdc-card__action-icons');
+
+  if (typeof restaurant.is_favorite === 'string') {
+    restaurant.is_favorite = !!parseInt(restaurant.is_favorite);
+  }
+  const icon = restaurant.is_favorite ? 'favorite' : 'favorite_border';
+  const ariaPressed = restaurant.is_favorite ? 'true' : 'false';
+  favorite.innerHTML = oneLineTrim`
+  <span class="mdc-icon-toggle mdc-card__action mdc-card__action--icon" 
+    role="button" 
+    aria-pressed="${ariaPressed}"
+    aria-label="Make it favorite" tabindex="0"
+    data-icon-inner-selector=".material-icons"
+    data-toggle-on='{"content": "favorite", "label": "Make it favorite"}'
+    data-toggle-off='{"content": "favorite_border", "label": "Unfavorite it"}'>
+    <i id="${restaurant.id}" class="material-icons" aria-hidden="true">${icon}</i>
+  </span>`;
+
+  const favouriteIcon = favorite.querySelector('.mdc-icon-toggle');
+  MDCIconToggle.attachTo(favouriteIcon);
+  favouriteIcon.addEventListener('click', (e) => {
+    const restId = e.target.id;
+    const isFavorite = e.target.parentElement.getAttribute('aria-pressed') === 'true';
+
+    setFavorite(restId, isFavorite)
+      .then(() => sendFavorite(restId, isFavorite))
+      .then(response => response.json())
+      .then((text) => {
+        console.log('storeFavorite response from server API', text);
+      })
+      .catch((error) => {
+        console.error('error during storeFavorite request to server API', error);
+      });
+  });
+
+  return wrap;
 };
 
 const fillRestaurantsHTML = (restaurants) => {
@@ -133,11 +170,11 @@ const fillRestaurantsHTML = (restaurants) => {
   // restaurants.forEach((restaurant) => {
   //   ul.append(createRestaurantHTML(restaurant));
   // });
-  let cardsHTML = '';
+  const cardsHTML = '';
   restaurants.forEach((restaurant) => {
-    cardsHTML += createRestaurantCardHTML(restaurant);
+    getRestContainerEl().append(createRestaurantCardEl(restaurant));
   });
-  getRestContainerEl().innerHTML = cardsHTML;
+  // getRestContainerEl().innerHTML = cardsHTML;
   globalLazyLoad = new LazyLoad({ threshold: 0 });
 };
 

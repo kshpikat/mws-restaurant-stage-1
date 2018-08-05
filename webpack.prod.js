@@ -76,7 +76,7 @@ module.exports = merge(common, {
     new InjectManifest({
       swDest: 'sw.js',
       swSrc: './app/sw.src.js',
-      exclude: [/\.png$/, /\.LICENSE$/, '_redirects']
+      exclude: [/\.png$/, /-800\.jpg$/, /\.LICENSE$/, '_redirects']
     }),
     new UglifyJsPlugin({
       test: /\.js$/,

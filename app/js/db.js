@@ -1,33 +1,145 @@
+/* global google */
+import { oneLineTrim } from 'common-tags';
+import { MDCSnackbar } from '@material/snackbar';
 import lf from 'localforage';
-import _ from 'underscore';
+import { extendPrototype } from 'localforage-startswith';
 
-// const getServerUrl = () => 'https://mws-stage-2-nehlregqhh.now.sh';
-const getAllRestUrl = () => 'https://mws-stage-2-nehlregqhh.now.sh/restaurants';
+extendPrototype(lf);
+
+const dbPrefixRests = 'restaurants';
+const dbPrefixReview = 'review';
+
+const getServer = () => 'http://localhost:1337';
+const getAllRestUrl = () => `${getServer()}/restaurants`;
+const getRestReviewUrl = () => `${getServer()}/reviews`;
+const getRestReviewByRestUrl = () => `${getRestReviewUrl()}/?restaurant_id=`;
+const getRestByIdReviewsUrl = restId => `${getRestReviewByRestUrl()}${restId}`;
 
 lf.config({
   driver: lf.INDEXEDDB,
   name: 'Restaurant Reviews',
   version: 1.0,
-  storeName: 'restreviews_1'
+  storeName: 'restreviews_3'
 });
 
-const getFromDB = key => lf.getItem(key)
-  .then(value => JSON.parse(value)).catch(error => console.log(error));
+const getFromDB = key => lf.getItem(key).then(value => value);
+export const pluck = (array, key) => array.map(object => object[key]);
+export const uniq = array => array.filter((v, i, a) => a.indexOf(v) === i);
+export const zeroPad = (num, places = 10) => {
+  const zero = places - num.toString().length + 1;
+  return Array(+(zero > 0 && zero)).join('0') + num;
+};
 
 export const loadRestaurants = () => fetch(getAllRestUrl(), { credentials: 'omit' })
   .then(response => response
     .json()
-    .then(json => lf.setItem('restaurants', JSON.stringify(json)))
-    .then(() => lf.getItem('restaurants'))
-    .then(restaurants => JSON.parse(restaurants)))
+    .then(json => lf.setItem(dbPrefixRests, json))
+    .then(() => lf.getItem(dbPrefixRests))
+    .then(restaurants => restaurants))
   .catch(() => {
     // offline
-    console.log(
-      'Can not fetch restaurant data. Trying to get it from IndexedDB...'
-    );
-    return getFromDB('restaurants');
+    console.warn('Can not fetch rest data. Going to check it in DB...');
+    return getFromDB(dbPrefixRests);
   });
 
+export const setFavorite = (restId, isFavorite) => {
+  console.info(`going to update ${restId} with ${isFavorite}`);
+  return lf.getItem(dbPrefixRests)
+    .then((items) => {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].id === restId) {
+          items[i].is_favorite = isFavorite;
+          break;
+        }
+      }
+      console.info(`is_favorite updated for restId:${restId}`);
+      return lf.setItem(dbPrefixRests, items);
+    });
+};
+
+export const getNextReviewId = () => {
+  // For real world application I would make something like UUID
+  // Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36).substr(2, 10);
+  let maxId = 0;
+  const prefixRegexp = new RegExp(`^${dbPrefixReview}-`);
+  return lf.iterate((v, k) => {
+    if (prefixRegexp.test(k)) {
+      console.info('found review record', k);
+      if (v.id > maxId) {
+        console.info(v.id, 'is more than', maxId);
+        maxId = v.id;
+      }
+    }
+  }).then(() => {
+    maxId += 200;
+    console.log('Next ID for review is');
+    console.log(maxId);
+    return maxId;
+  });
+};
+
+export const storeReview = (review) => {
+  const formattedId = zeroPad(parseInt(review.id));
+  const key = `${dbPrefixReview}-${review.restaurant_id}-${formattedId}`;
+  console.info(`going to save review with key ${key}`, review);
+  return lf.setItem(key, review);
+};
+export const storeReviews = reviews => Promise.all(reviews.map(item => storeReview(item)));
+export const getReviewsByRestId = (restId) => {
+  const prefix = `${dbPrefixReview}-${restId}-`;
+  console.info(`going to grab reviews with prefix ${prefix}`);
+  return lf.startsWith(prefix)
+    .then((reviews) => {
+      console.info('Reviews from DB', reviews);
+      return reviews;
+    });
+};
+
+export const loadRestReviewsByRest = (restId) => {
+  console.info(`going to retrieve reviews for rest ${restId}`);
+  return fetch(getRestByIdReviewsUrl(restId), { credentials: 'omit' })
+    .then(response => response
+      .json()
+      .then(json => storeReviews(json))
+      .then(() => getReviewsByRestId(restId))
+      .then(reviews => reviews))
+    .catch((error) => {
+      console.warn(error);
+      //  network failure or offline situation
+      console.log('Can not get reviews by rest data. Trying to get it from IndexedDB...');
+      return getReviewsByRestId(restId);
+    });
+};
+
+export const showNotification = (text, options = { needRefresh: false }) => {
+  const snackbar = document.querySelector('#notifications');
+  snackbar.innerHTML = oneLineTrim`
+  <div class="mdc-snackbar" aria-live="assertive" aria-atomic="true" aria-hidden="true">
+    <div class="mdc-snackbar__text"></div>
+    <div class="mdc-snackbar__action-wrapper">
+    <button type="button" class="mdc-snackbar__action-button"></button>
+    </div>
+  </div>`;
+
+  const snackbarJS = new MDCSnackbar(snackbar.querySelector('.mdc-snackbar'));
+
+  if (options.needRefresh) {
+    snackbarJS.show({
+      message: text,
+      multiline: true,
+      actionText: 'Refresh',
+      actionHandler: () => {
+        window.location.reload();
+      }
+    });
+  } else {
+    snackbarJS.show({
+      message: text,
+      timeout: 1000,
+      multiline: true
+    });
+  }
+};
 
 export const getRestById = (needle, restaurants) => restaurants.find(r => String(r.id) === String(needle));
 export const getRestByCuisine = (needle, restaurants) => restaurants.filter(r => r.cuisine_type === needle);
@@ -43,9 +155,8 @@ export const getRestByCuisineNeighborhood = (cuisine, neighborhood, restaurants)
   return results;
 };
 
-const getUniqValsFromAssocArray = (arr, key) => _.uniq(_.pluck(arr, key));
-export const getNeighborhoods = restaurants => getUniqValsFromAssocArray(restaurants, 'neighborhood');
-export const getCuisines = restaurants => getUniqValsFromAssocArray(restaurants, 'cuisine_type');
+export const getNeighborhoods = restaurants => uniq(pluck(restaurants, 'neighborhood'));
+export const getCuisines = restaurants => uniq(pluck(restaurants, 'cuisine_type'));
 export const urlForRestaurant = restaurant => `./restaurant.html?id=${restaurant.id}`;
 
 export const mapMarkerForRestaurant = (restaurant, map) => {
@@ -75,7 +186,56 @@ export const titleGoogleMap = (map, title) => {
 export const registerSW = () => {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => {
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            switch (event.data) {
+              case 'favorite-stored':
+              case 'reviews-stored':
+                showNotification('Record stored in IndexedDB');
+                break;
+              case 'reviews-inprogress':
+              case 'favorite-inprogress':
+                showNotification('Record start sync');
+                break;
+              case 'reviews-done':
+              case 'favorite-done':
+                showNotification('Sync done! Please refresh the page.', { needRefresh: true });
+                break;
+              default:
+                console.warn('Client received unknown Message:', event.data);
+            }
+          });
+        });
     });
   }
+};
+
+export const sendFavorite = (restaurantId, isFavorite) => {
+  showNotification('Going to send Favorite flag to the Server...');
+  return fetch(`${getAllRestUrl()}/${restaurantId}/`,
+    {
+      method: 'PUT',
+      mode: 'cors',
+      cache: 'no-cache',
+      credentials: 'omit',
+      headers:
+      new Headers({
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }),
+      body: `is_favorite=${(isFavorite) ? 1 : 0}`
+    });
+};
+
+export const sendReview = (review) => {
+  showNotification('Going to send Review to the Server...');
+  return fetch(`${getRestReviewUrl()}/`,
+    {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'no-cache',
+      credentials: 'omit',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(review),
+    });
 };

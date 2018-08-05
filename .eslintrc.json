@@ -4,18 +4,17 @@
   "parserOptions": {
     "ecmaVersion": 6
   },
+  "env": {
+    "browser": true
+  },
   "rules": {
     "linebreak-style": 0,
     "no-restricted-globals": 0,
     "comma-dangle": 0,
-	"quotes": 1
+    "quotes": 1,
+    "import/no-dynamic-require": 0
   },
   "plugins": [
     "html"
-  ],
-  "globals": {
-    "document": false,
-    "self": false,
-    "window": false
-  }
+  ]
 }

@@ -1,13 +1,15 @@
+import { oneLineTrim } from 'common-tags';
 import { MDCDialog } from '@material/dialog';
 import { MDCTextField } from '@material/textfield';
 import { MDCRipple } from '@material/ripple';
 import { MDCFormField } from '@material/form-field';
 import { MDCRadio } from '@material/radio';
-import '../css/styles.css';
+import { MDCSnackbar, MDCSnackbarFoundation } from '@material/snackbar';
+import 'normalize.css/normalize.css';
+import 'css-star-rating';
 import '../css/common.scss';
 import '../css/dialog.scss';
-import 'normalize.css/normalize.css';
-import _ from 'underscore';
+import '../css/styles.css';
 import LazyLoad from './lazyload.es2015';
 import '../manifest.json';
 
@@ -21,7 +23,11 @@ import {
 import {
   registerSW,
   loadRestaurants,
+  loadRestReviewsByRest,
   getRestById,
+  storeReview,
+  sendReview,
+  getNextReviewId
 } from './db';
 
 if (process.env.NODE_ENV !== 'development') {
@@ -30,13 +36,25 @@ if (process.env.NODE_ENV !== 'development') {
 
 let globalLazyLoad;
 let globalRestCache;
+let globalDialog;
+const MDCitems = [];
+
+const getReviewsContainerEl = () => document.querySelector('#reviews-container');
+
+const resetReviews = () => {
+  getReviewsContainerEl().innerHTML = oneLineTrim`
+    <ul id="reviews-list"></ul>
+    <button class="mdc-button add-review-button">
+      Add review
+    </button>`;
+};
 
 const fillRestaurantHoursHTML = (operatingHours) => {
   const hours = document.getElementById('restaurant-hours');
   if (!hours || Array.isArray(operatingHours)) {
     return false;
   }
-  _.keys(operatingHours).forEach((key) => {
+  Object.keys(operatingHours).forEach((key) => {
     const row = document.createElement('tr');
 
     const day = document.createElement('td');
@@ -51,20 +69,70 @@ const fillRestaurantHoursHTML = (operatingHours) => {
   });
 };
 
+
+const createRatingHTML = (score) => {
+  let scoreParsed = parseInt(score) ? parseInt(score) : 0;
+  scoreParsed = scoreParsed > 5 ? 5 : scoreParsed;
+
+  let color = 'color-default';
+  switch (scoreParsed) {
+    case 2:
+    case 3:
+      color = 'color-ok';
+      break;
+    case 4:
+    case 5:
+      color = 'color-positive';
+      break;
+    case 0:
+    case 1:
+    default:
+      color = 'color-negative';
+  }
+
+
+  const ratingHTML = oneLineTrim`
+<div aria-labelledby="Restaurant score is ${scoreParsed}" class="rating medium star-icon value-${scoreParsed} ${color}" style="float:right;margin:15px 5px;">
+  <div class="star-container">
+    <div class="star">
+    <i class="star-empty"></i>
+    <i class="star-filled"></i>
+    </div>
+    <div class="star">
+    <i class="star-empty"></i>
+    <i class="star-filled"></i>
+    </div>
+    <div class="star">
+    <i class="star-empty"></i>
+    <i class="star-filled"></i>
+    </div>
+    <div class="star">
+    <i class="star-empty"></i>
+    <i class="star-filled"></i>
+    </div>
+    <div class="star">
+    <i class="star-empty"></i>
+    <i class="star-filled"></i>
+    </div>
+  </div>
+</div>
+  `;
+
+  return ratingHTML;
+};
+
 const createReviewHTML = (review) => {
   const li = document.createElement('li');
   const name = document.createElement('p');
-  name.innerHTML = review.name;
+  name.innerHTML = review.name + createRatingHTML(review.rating);
   name.tabIndex = 0;
   li.appendChild(name);
 
   const date = document.createElement('p');
-  date.innerHTML = review.date;
+  const validDate = (new Date(review.createdAt)).getTime() > 0;
+  const dateValue = validDate ? new Date(review.createdAt) : new Date();
+  date.innerHTML = (dateValue).toLocaleDateString();
   li.appendChild(date);
-
-  const rating = document.createElement('p');
-  rating.innerHTML = `Rating: ${review.rating}`;
-  li.appendChild(rating);
 
   const comments = document.createElement('p');
   comments.innerHTML = review.comments;
@@ -74,7 +142,8 @@ const createReviewHTML = (review) => {
 };
 
 const fillReviewsHTML = (reviews) => {
-  const container = document.getElementById('reviews-container');
+  resetReviews();
+  const container = getReviewsContainerEl();
   const title = document.createElement('h3');
   title.innerHTML = 'Reviews';
   title.tabIndex = 0;
@@ -86,11 +155,16 @@ const fillReviewsHTML = (reviews) => {
     container.appendChild(noReviews);
     return;
   }
+
   const ul = document.getElementById('reviews-list');
-  reviews.forEach((review) => {
-    ul.appendChild(createReviewHTML(review));
-  });
+  Object.keys(reviews).forEach(key => ul.appendChild(createReviewHTML(reviews[key])));
   container.appendChild(ul);
+
+  container.querySelector('.add-review-button')
+    .addEventListener('click', (event) => {
+      globalDialog.lastFocusedTarget = event.target;
+      globalDialog.show();
+    });
 };
 
 
@@ -118,9 +192,6 @@ const fillRestaurantHTML = (restaurant) => {
   if (restaurant.operating_hours) {
     fillRestaurantHoursHTML(restaurant.operating_hours);
   }
-  if (restaurant.reviews) {
-    fillReviewsHTML(restaurant.reviews);
-  }
 };
 
 const fillBreadcrumb = (restaurant) => {
@@ -131,7 +202,7 @@ const fillBreadcrumb = (restaurant) => {
   breadcrumb.appendChild(li);
 };
 
-const getParameterByName = (name, urlString = document.location) => {
+const getUrlParam = (name, urlString = document.location) => {
   const url = new URL(urlString);
   return url.searchParams.get(name);
 };
@@ -171,31 +242,52 @@ const resetText = (textSelector) => {
 const resetDialog = () => {
   resetRadio('radios');
   resetText('#text');
+  resetText('#name');
 };
 
 const initDialog = (dialogSelector) => {
-  const dialog = new MDCDialog(document.querySelector(dialogSelector));
+  globalDialog = new MDCDialog(document.querySelector(dialogSelector));
 
-  dialog.listen('MDCDialog:accept', () => {
-    console.log('accepted');
-    console.log('radio', getRadioValue('radios'));
-    console.log('text', document.querySelector('#text').value);
+  globalDialog.listen('MDCDialog:accept', () => {
+    const restId = getUrlParam('id');
+    const comment = document.querySelector('#text').value;
+    const rating = getRadioValue('radios');
+    const name = document.querySelector('#name').value;
+    console.info('accepted');
+    getNextReviewId()
+      .then((nextReviewId) => {
+        const review = {
+          id: nextReviewId,
+          restaurant_id: restId,
+          name,
+          rating,
+          comments: comment
+        };
+
+        console.info('Got review comment from dialog', review);
+
+        storeReview(review)
+          .then(() => sendReview(review))
+          .then(() => loadRestReviewsByRest(restId))
+          .then(reviews => fillReviewsHTML(reviews));
+      });
     resetDialog();
   });
-  dialog.listen('MDCDialog:cancel', () => console.log('canceled'));
-  document.querySelectorAll('.add-review-button').forEach((el) => {
-    el.addEventListener('click', (event) => {
-      dialog.lastFocusedTarget = event.target;
-      dialog.show();
+  globalDialog.listen('MDCDialog:cancel', () => console.log('canceled'));
+  document.querySelector('.fab-add-review-button')
+    .addEventListener('click', (event) => {
+      globalDialog.lastFocusedTarget = event.target;
+      globalDialog.show();
     });
-  });
-  const fabRipple = new MDCRipple(document.querySelector('.mdc-fab'));
-  const buttonRipple = new MDCRipple(document.querySelector('.mdc-button'));
-  const textField = new MDCTextField(document.querySelector('.mdc-text-field'));
+
+  document.querySelectorAll('.mdc-text-field').forEach(el => MDCitems.push(new MDCTextField(el)));
+  MDCitems.push(new MDCRipple(document.querySelector('.mdc-fab')));
+  MDCitems.push(new MDCRipple(document.querySelector('.mdc-button')));
   const radio = new MDCRadio(document.querySelector('.mdc-radio'));
   const formField = new MDCFormField(document.querySelector('.mdc-form-field'));
   formField.input = radio;
 
+  // show button
   document.querySelector('.mdc-fab--exited').classList.remove('mdc-fab--exited');
 };
 
@@ -203,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDialog('#my-mdc-dialog');
   loadRestaurants()
     .then((restaurants) => {
-      const id = getParameterByName('id');
+      const id = getUrlParam('id');
       if (!id) {
         console.error('No restaurant id in URL');
         window.location.href = 'index.html';
@@ -212,6 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fillRestaurantHTML(globalRestCache);
         fillBreadcrumb(globalRestCache);
         renderMap();
+        loadRestReviewsByRest(id)
+          .then(reviews => fillReviewsHTML(reviews));
       }
     });
 });
