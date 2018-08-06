@@ -1,10 +1,12 @@
 import { oneLineTrim } from 'common-tags';
 import { load, urlSettings } from 'google-maps-promise/es2015';
+import LazyLoad from './lazyload.es2015';
 import {
   titleGoogleMap,
   mapMarkerForRestaurant
 } from './db';
 
+let globalLazyLoad;
 let markers = [];
 let globalMap;
 let globalMapLoaded;
@@ -93,9 +95,10 @@ const staticMapImage = (height, elementId) => {
 
   const mapsImage = `
   <img width="${width}px"
-  src=${encodeURI(url)} alt="Map of all restaurants" id="mapImage">
+  data-src=${encodeURI(url)} class="lazyload" alt="Map of all restaurants" id="mapImage">
   `;
   document.querySelector(`#${elementId}`).innerHTML = mapsImage;
+  globalLazyLoad = new LazyLoad({ threshold: 0 });
 };
 
 export const initMap = (height, elementId, getRestCacheCallback) => new Promise(((resolve, reject) => {

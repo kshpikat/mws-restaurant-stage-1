@@ -54,8 +54,8 @@ module.exports = merge(common, {
       inline: true,
       minify: true,
       extract: true,
-      width: 1300,
-      height: 900,
+      width: 411,
+      height: 823,
       penthouse: {
         blockJSRequests: false,
       }
@@ -67,8 +67,8 @@ module.exports = merge(common, {
       inline: true,
       minify: true,
       extract: true,
-      width: 1300,
-      height: 900,
+      width: 411,
+      height: 823,
       penthouse: {
         blockJSRequests: false,
       }

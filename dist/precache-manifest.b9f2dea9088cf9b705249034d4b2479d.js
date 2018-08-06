@@ -7,32 +7,32 @@ self.__precacheManifest = [
     "url": "manifest.json"
   },
   {
-    "revision": "586b9b884245015ee32ba8f0e1d5104c",
+    "revision": "363c5f19f3851fc19cb6bab1e74b9d1f",
     "url": "restaurant.html"
   },
   {
     "url": "8003651330b0892133a1ae29f51988df-500.jpg"
   },
   {
-    "url": "js/restaurant.9b2a1c955b6cdd1e546a.js"
+    "url": "js/restaurant.a547f7c58e0c550d1b3f.js"
   },
   {
     "url": "9807ea8c24360d8ca2b5774085c0dd04-800.jpg"
   },
   {
-    "url": "css/main.24b8b8d79932a57d423d.css"
+    "url": "css/main.9167b4048a87bac9bdf3.css"
   },
   {
     "url": "ffa44d61a52e40b076c0218d6edbfd79-200.jpg"
   },
   {
-    "url": "css/restaurant.9b2a1c955b6cdd1e546a.css"
+    "url": "css/restaurant.a547f7c58e0c550d1b3f.css"
   },
   {
     "url": "da6901efccf976a81a8fdf98c8d17147-800.jpg"
   },
   {
-    "revision": "b238bc6c90dbea52df5da543b32f83c7",
+    "revision": "9a5ce9ab92d6d50d8e67abac9c7235ab",
     "url": "index.html"
   },
   {
@@ -48,7 +48,7 @@ self.__precacheManifest = [
     "url": "e236065c06c1cff5d7cd8d931bdf00d7-500.jpg"
   },
   {
-    "url": "js/main.24b8b8d79932a57d423d.js"
+    "url": "js/main.9167b4048a87bac9bdf3.js"
   },
   {
     "url": "a9482fbd8ffe9b8e6d85a3ec93ce104c-500.jpg"

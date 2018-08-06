@@ -189,6 +189,16 @@
 
 /*! all exports used */
 
+/*!***********************************!*\
+  !*** ./app/js/lazyload.es2015.js ***!
+  \***********************************/
+
+/*! no static exports found */
+
+/*! all exports used */
+
+/*! ModuleConcatenation bailout: Module is not an ECMAScript module */
+
 /*!**********************!*\
   !*** ./app/js/db.js ***!
   \**********************/
@@ -373,21 +383,11 @@
 
 /*! ModuleConcatenation bailout: Module is not an ECMAScript module */
 
-/*!***********************************!*\
-  !*** ./app/js/lazyload.es2015.js ***!
-  \***********************************/
+/*!***************************!*\
+  !*** ./app/manifest.json ***!
+  \***************************/
 
-/*! no static exports found */
-
-/*! all exports used */
-
-/*! ModuleConcatenation bailout: Module is not an ECMAScript module */
-
-/*!***********************************!*\
-  !*** ./app/js/lazyload.es2015.js ***!
-  \***********************************/
-
-/*! no static exports found */
+/*! exports provided: name, short_name, theme_color, background_color, display, Scope, start_url, icons, default */
 
 /*! all exports used */
 
@@ -438,6 +438,8 @@
 /*! common-tags */
 
 /*! google-maps-promise/es2015 */
+
+/*! ./lazyload.es2015 */
 
 /*! ./db */
 
