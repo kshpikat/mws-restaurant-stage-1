@@ -70,7 +70,7 @@ const fillRestaurantHoursHTML = (operatingHours) => {
 };
 
 
-const createRatingHTML = (score) => {
+const createRatingHTML = (reviewId, score) => {
   let scoreParsed = parseInt(score) ? parseInt(score) : 0;
   scoreParsed = scoreParsed > 5 ? 5 : scoreParsed;
 
@@ -92,7 +92,8 @@ const createRatingHTML = (score) => {
 
 
   const ratingHTML = oneLineTrim`
-<div aria-labelledby="Restaurant score is ${scoreParsed}" class="rating medium star-icon value-${scoreParsed} ${color}" style="float:right;margin:15px 5px;">
+<div aria-labelledby="rating-${reviewId}" class="rating medium star-icon value-${scoreParsed} ${color}">
+  <div class="label-value" id="rating-${reviewId}">${scoreParsed} of 5</div>
   <div class="star-container">
     <div class="star">
     <i class="star-empty"></i>
@@ -124,7 +125,7 @@ const createRatingHTML = (score) => {
 const createReviewHTML = (review) => {
   const li = document.createElement('li');
   const name = document.createElement('p');
-  name.innerHTML = review.name + createRatingHTML(review.rating);
+  name.innerHTML = review.name + createRatingHTML(review.id, review.rating);
   name.tabIndex = 0;
   li.appendChild(name);
 
