@@ -9,7 +9,7 @@ extendPrototype(lf);
 const dbPrefixRests = 'restaurants';
 const dbPrefixReview = 'review';
 
-const getServer = () => 'http://localhost:1337';
+const getServer = () => 'http://reviews-server.tt34.com:1337';
 const getAllRestUrl = () => `${getServer()}/restaurants`;
 const getRestReviewUrl = () => `${getServer()}/reviews`;
 const getRestReviewByRestUrl = () => `${getRestReviewUrl()}/?restaurant_id=`;
