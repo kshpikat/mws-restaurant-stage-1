@@ -34,49 +34,15 @@ if (process.env.NODE_ENV !== 'development') {
 let globalLazyLoad;
 let globalRestCache;
 
-const setRestCache = (restaurants) => { globalRestCache = restaurants; };
+const setRestCache = (restaurants) => {
+  globalRestCache = restaurants;
+};
 const getRestContainerEl = () => document.querySelector('.cards');
 
 const resetRestaurants = () => {
   getRestContainerEl().innerHTML = '';
   cleanMarkers();
 };
-
-/**
- * Create restaurant HTML.
- */
-// const createRestaurantHTML = (restaurant) => {
-//   const li = document.createElement('li');
-
-//   const image = document.createElement('img');
-//   image.className = 'restaurant-img lazyload';
-//   const img = require(`../img/${restaurant.id}.jpg`);
-//   image.src = img.placeholder;
-//   image.setAttribute('data-src', img.src);
-//   image.setAttribute('data-srcset', img.srcSet);
-//   image.alt = `Photo for ${restaurant.name}`;
-//   li.append(image);
-
-//   const name = document.createElement('h3');
-//   name.innerHTML = restaurant.name;
-//   li.append(name);
-
-//   const neighborhood = document.createElement('p');
-//   neighborhood.innerHTML = restaurant.neighborhood;
-//   li.append(neighborhood);
-
-//   const address = document.createElement('p');
-//   address.innerHTML = restaurant.address;
-//   li.append(address);
-
-//   const more = document.createElement('a');
-//   more.innerHTML = 'View Details';
-//   more.setAttribute('role', 'button');
-//   more.href = urlForRestaurant(restaurant);
-//   li.append(more);
-
-//   return li;
-// };
 
 const getHTMLFromElement = (el) => {
   const wrap = document.createElement('div');
@@ -127,7 +93,7 @@ const createRestaurantCardEl = (restaurant) => {
   const favorite = wrap.querySelector('.mdc-card__action-icons');
 
   if (typeof restaurant.is_favorite === 'string') {
-    restaurant.is_favorite = !!parseInt(restaurant.is_favorite);
+    restaurant.is_favorite = !!parseInt(restaurant.is_favorite, 10);
   }
   const icon = restaurant.is_favorite ? 'favorite' : 'favorite_border';
   const ariaPressed = restaurant.is_favorite ? 'true' : 'false';
@@ -152,10 +118,10 @@ const createRestaurantCardEl = (restaurant) => {
       .then(() => sendFavorite(restId, isFavorite))
       .then(response => response.json())
       .then((text) => {
-        console.log('storeFavorite response from server API', text);
+        console.info('storeFavorite response from server API', text);
       })
       .catch((error) => {
-        console.error('error during storeFavorite request to server API', error);
+        console.info('error during storeFavorite request to server API', error);
       });
   });
 
@@ -163,18 +129,9 @@ const createRestaurantCardEl = (restaurant) => {
 };
 
 const fillRestaurantsHTML = (restaurants) => {
-  if (isDevMode()) {
-    console.log('fillRestaurantsHTML main.js:162', restaurants);
-  }
-  // const ul = document.querySelector('#restaurants-list');
-  // restaurants.forEach((restaurant) => {
-  //   ul.append(createRestaurantHTML(restaurant));
-  // });
-  const cardsHTML = '';
   restaurants.forEach((restaurant) => {
     getRestContainerEl().append(createRestaurantCardEl(restaurant));
   });
-  // getRestContainerEl().innerHTML = cardsHTML;
   globalLazyLoad = new LazyLoad({ threshold: 0 });
 };
 
@@ -258,7 +215,6 @@ const initMaterial = () => {
       ripples.push(ripple);
     });
 };
-
 
 document.addEventListener('DOMContentLoaded', () => {
   renderMap();

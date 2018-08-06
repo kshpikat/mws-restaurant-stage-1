@@ -12,13 +12,13 @@
 }
 
 .app-fab--absolute {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
+  position: fixed !important;
+  bottom: 1.5rem !important;
+  right: 1.5rem !important;
 }
 
 @media(min-width: 1000px) {
    .app-fab--absolute {
-    display: none;
+    display: none !important;
   }
 }

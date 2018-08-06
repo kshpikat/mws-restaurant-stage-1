@@ -2,7 +2,6 @@
 node_modules/
 *-compiled.js
 *-compiled.js.map
-dist/
 .tmp
 app.yaml
 package-lock.json

@@ -9,7 +9,7 @@ extendPrototype(lf);
 const dbPrefixRests = 'restaurants';
 const dbPrefixReview = 'review';
 
-const getServer = () => 'http://reviews-server.tt34.com:1337';
+const getServer = () => 'https://reviews-server.tt34.com';
 const getAllRestUrl = () => `${getServer()}/restaurants`;
 const getRestReviewUrl = () => `${getServer()}/reviews`;
 const getRestReviewByRestUrl = () => `${getRestReviewUrl()}/?restaurant_id=`;
@@ -46,8 +46,8 @@ export const setFavorite = (restId, isFavorite) => {
   console.info(`going to update ${restId} with ${isFavorite}`);
   return lf.getItem(dbPrefixRests)
     .then((items) => {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].id === restId) {
+      for (let i = 0; i < items.length; i += 1) {
+        if (parseInt(items[i].id, 10) === parseInt(restId, 10)) {
           items[i].is_favorite = isFavorite;
           break;
         }
@@ -79,7 +79,7 @@ export const getNextReviewId = () => {
 };
 
 export const storeReview = (review) => {
-  const formattedId = zeroPad(parseInt(review.id));
+  const formattedId = zeroPad(parseInt(review.id, 10));
   const key = `${dbPrefixReview}-${review.restaurant_id}-${formattedId}`;
   console.info(`going to save review with key ${key}`, review);
   return lf.setItem(key, review);
@@ -127,6 +127,7 @@ export const showNotification = (text, options = { needRefresh: false }) => {
     snackbarJS.show({
       message: text,
       multiline: true,
+      timeout: 60000,
       actionText: 'Refresh',
       actionHandler: () => {
         window.location.reload();
@@ -135,14 +136,14 @@ export const showNotification = (text, options = { needRefresh: false }) => {
   } else {
     snackbarJS.show({
       message: text,
-      timeout: 1000,
+      timeout: 5000,
       multiline: true
     });
   }
 };
 
-export const getRestById = (needle, restaurants) => restaurants.find(r => String(r.id) === String(needle));
-export const getRestByCuisine = (needle, restaurants) => restaurants.filter(r => r.cuisine_type === needle);
+export const getRestById = (n, h) => h.find(r => String(r.id) === String(n));
+export const getRestByCuisine = (n, h) => h.filter(r => r.cuisine_type === n);
 
 export const getRestByCuisineNeighborhood = (cuisine, neighborhood, restaurants) => {
   let results = restaurants;
@@ -159,15 +160,12 @@ export const getNeighborhoods = restaurants => uniq(pluck(restaurants, 'neighbor
 export const getCuisines = restaurants => uniq(pluck(restaurants, 'cuisine_type'));
 export const urlForRestaurant = restaurant => `./restaurant.html?id=${restaurant.id}`;
 
-export const mapMarkerForRestaurant = (restaurant, map) => {
-  const marker = new google.maps.Marker({
-    position: restaurant.latlng,
-    title: restaurant.name,
-    url: urlForRestaurant(restaurant),
-    map
-  });
-  return marker;
-};
+export const mapMarkerForRestaurant = (restaurant, map) => new google.maps.Marker({
+  position: restaurant.latlng,
+  title: restaurant.name,
+  url: urlForRestaurant(restaurant),
+  map
+});
 
 export const titleGoogleMap = (map, title) => {
   google.maps.event.addListener(map, 'tilesloaded', () => {
@@ -203,7 +201,7 @@ export const registerSW = () => {
                 showNotification('Sync done! Please refresh the page.', { needRefresh: true });
                 break;
               default:
-                console.warn('Client received unknown Message:', event.data);
+                console.info('Client received unknown Message:', event.data);
             }
           });
         });
@@ -219,11 +217,13 @@ export const sendFavorite = (restaurantId, isFavorite) => {
       mode: 'cors',
       cache: 'no-cache',
       credentials: 'omit',
-      headers:
-      new Headers({
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `is_favorite=${(isFavorite) ? 1 : 0}`
+    })
+    .catch(() => {
+      // offline
+      showNotification('Upsss... bad connection, but don\'t worry! We\'ll save it in DB for now ;)');
+      console.warn('Can not send Fav flag.');
     });
 };
 
@@ -236,6 +236,11 @@ export const sendReview = (review) => {
       cache: 'no-cache',
       credentials: 'omit',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(review),
+      body: JSON.stringify(review)
+    })
+    .catch(() => {
+      // offline
+      showNotification('Upsss... bad connection, but don\'t worry! We\'ll save it in DB for now ;)');
+      console.warn('Can not send Review.');
     });
 };
