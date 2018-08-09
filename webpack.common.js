@@ -7,7 +7,6 @@ const autoprefixer = require('autoprefixer');
 const responsiveLoaderSharp = require('responsive-loader/sharp');
 
 module.exports = {
-  // context: path.resolve(__dirname, "app"),
   entry: {
     main: './app/js/main.js',
     restaurant: './app/js/restaurant.js'
@@ -79,20 +78,6 @@ module.exports = {
           }
         ]
       },
-      // {
-      //   test: /\.css$/,
-      //   use: [
-      //     'style-loader',
-      //     MiniCssExtractPlugin.loader,
-      //     'css-loader',
-      //     {
-      //       loader: 'postcss-loader',
-      //       options: {
-      //         plugins: () => [autoprefixer()]
-      //       }
-      //     }
-      //   ]
-      // },
       {
         test: /\.(jpg|png)$/,
         use: [
